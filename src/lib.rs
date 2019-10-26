@@ -73,11 +73,10 @@ use mio::Poll;
 /// }).unwrap()
 /// ```
 ///
-pub fn listen<A, F, H>(addr: A, factory: F) -> Result<()>
+pub fn listen<A, F>(addr: A, factory: F) -> Result<()>
 where
     A: ToSocketAddrs + fmt::Debug,
-    F: FnMut(Sender) -> H,
-    H: Handler,
+    F: Factory
 {
     let ws = WebSocket::new(factory)?;
     ws.listen(addr)?;
