@@ -130,7 +130,7 @@ where
 }
 
 /// WebSocket settings
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Settings {
     /// The maximum number of connections that this WebSocket will support.
     /// The default setting is low and should be increased when expecting more
@@ -243,7 +243,7 @@ pub struct Settings {
     /// restrict accesses only with the origin header entry
     ///
     /// Default: None
-    pub origins: Option<Vec<String>>,
+    pub origins: Option<[String]>,
 }
 
 impl Default for Settings {
