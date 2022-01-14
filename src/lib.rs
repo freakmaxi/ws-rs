@@ -235,6 +235,10 @@ pub struct Settings {
     ///
     /// Default: false
     pub tcp_nodelay: bool,
+    /// restrict accesses only with the origin header entry
+    ///
+    /// Default: None
+    pub origins: Option<Vec<String>>,
 }
 
 impl Default for Settings {
@@ -265,6 +269,7 @@ impl Default for Settings {
             method_strict: false,
             encrypt_server: false,
             tcp_nodelay: false,
+            origins: None,
         }
     }
 }

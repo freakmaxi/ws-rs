@@ -8,10 +8,10 @@ use std::str::Utf8Error;
 
 use httparse;
 use mio;
-#[cfg(feature = "ssl")]
-use openssl::ssl::{Error as SslError, HandshakeError as SslHandshakeError};
 #[cfg(feature = "nativetls")]
 use native_tls::{Error as SslError, HandshakeError as SslHandshakeError};
+#[cfg(feature = "ssl")]
+use openssl::ssl::{Error as SslError, HandshakeError as SslHandshakeError};
 #[cfg(any(feature = "ssl", feature = "nativetls"))]
 type HandshakeError = SslHandshakeError<mio::tcp::TcpStream>;
 
@@ -35,6 +35,8 @@ pub enum Kind {
     /// The WebSocket will automatically attempt to send a Protocol (1002) close code, or if
     /// this error occurs during a handshake, an HTTP 400 response will be generated.
     Protocol,
+    /// this error occurs only during a handshake, an HTTP 403 response will be generated.
+    Forbidden,
     /// Indicates that the WebSocket received data that should be utf8 encoded but was not.
     /// The WebSocket will automatically attempt to send a Invalid Frame Payload Data (1007) close
     /// code.
@@ -115,6 +117,7 @@ impl StdError for Error {
             Kind::Internal => "Internal Application Error",
             Kind::Capacity => "WebSocket at Capacity",
             Kind::Protocol => "WebSocket Protocol Error",
+            Kind::Forbidden => "Initial Request Origin Error",
             Kind::Encoding(ref err) => err.description(),
             Kind::Io(ref err) => err.description(),
             Kind::Http(_) => "Unable to parse HTTP",

@@ -3,17 +3,17 @@ use std::collections::VecDeque;
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use std::mem::replace;
 use std::net::SocketAddr;
+use std::ops::Index;
 use std::str::from_utf8;
 
 use mio::tcp::TcpStream;
 use mio::{Ready, Token};
 use mio_extras::timer::Timeout;
-use url;
-
 #[cfg(feature = "nativetls")]
 use native_tls::HandshakeError;
 #[cfg(feature = "ssl")]
 use openssl::ssl::HandshakeError;
+use url;
 
 use frame::Frame;
 use handler::Handler;
@@ -23,10 +23,10 @@ use protocol::{CloseCode, OpCode};
 use result::{Error, Kind, Result};
 use stream::{Stream, TryReadBuf, TryWriteBuf};
 
+use super::Settings;
+
 use self::Endpoint::*;
 use self::State::*;
-
-use super::Settings;
 
 #[derive(Debug)]
 pub enum State {
@@ -382,6 +382,23 @@ where
                         self.events = Ready::empty();
                     }
                 }
+                Kind::Forbidden => {
+                    let msg = err.to_string();
+                    if let Server = self.endpoint {
+                        res.get_mut().clear();
+                        if let Err(err) =
+                            write!(res.get_mut(), "HTTP/1.1 403 Forbidden\r\n\r\n{}", msg)
+                        {
+                            self.handler.on_error(Error::from(err));
+                            self.events = Ready::empty();
+                        } else {
+                            self.events.remove(Ready::readable());
+                            self.events.insert(Ready::writable());
+                        }
+                    } else {
+                        self.events = Ready::empty();
+                    }
+                }
                 _ => {
                     let msg = err.to_string();
                     self.handler.on_error(err);
@@ -544,6 +561,29 @@ where
                 }
             };
 
+            if self.settings.origins.is_some() {
+                match request.origin() {
+                    Ok(o) if o.is_some() => {
+                        let origin = o.unwrap();
+                        let index = self
+                            .settings
+                            .origins
+                            .unwrap()
+                            .iter()
+                            .position(|i| origin.eq(i.as_str()));
+                        if index.is_none() {
+                            return Err(Error::new(Kind::Forbidden, "origin is not allowed"));
+                        }
+                    }
+                    _ => {
+                        return Err(Error::new(
+                            Kind::Forbidden,
+                            "origin is required but missing",
+                        ))
+                    }
+                }
+            }
+
             let response = Response::parse(res.get_ref())?.ok_or_else(|| {
                 Error::new(
                     Kind::Internal,
@@ -598,7 +638,8 @@ where
                         // TODO: see if this can be optimized with drain
                         let end = {
                             let data = res.get_ref();
-                            let end = data.iter()
+                            let end = data
+                                .iter()
                                 .enumerate()
                                 .take_while(|&(ind, _)| !data[..ind].ends_with(b"\r\n\r\n"))
                                 .count();
@@ -757,8 +798,10 @@ where
                             if !self.fragments.is_empty() {
                                 return Err(Error::new(Kind::Protocol, "Received unfragmented text frame while processing fragmented message."));
                             }
-                            let msg = Message::text(String::from_utf8(frame.into_data())
-                                .map_err(|err| err.utf8_error())?);
+                            let msg = Message::text(
+                                String::from_utf8(frame.into_data())
+                                    .map_err(|err| err.utf8_error())?,
+                            );
                             self.handler.on_message(msg)?;
                         }
                         OpCode::Binary => {
@@ -802,12 +845,12 @@ where
                                 let named = CloseCode::from(raw_code);
                                 if let CloseCode::Other(code) = named {
                                     if code < 1000 ||
-                                            code >= 5000 ||
-                                            code == 1004 ||
-                                            code == 1014 ||
-                                            code == 1016 || // these below are here to pass the autobahn test suite
-                                            code == 1100 || // we shouldn't need them later
-                                            code == 2000
+                                        code >= 5000 ||
+                                        code == 1004 ||
+                                        code == 1014 ||
+                                        code == 1016 || // these below are here to pass the autobahn test suite
+                                        code == 1100 || // we shouldn't need them later
+                                        code == 2000
                                         || code == 2999
                                     {
                                         return Err(Error::new(
@@ -934,7 +977,7 @@ where
                                         return Err(Error::new(
                                             Kind::Protocol,
                                             "Encounted fragmented control frame.",
-                                        ))
+                                        ));
                                     }
                                 }
                             } else {
@@ -1027,7 +1070,8 @@ where
         trace!("Message opcode {:?}", opcode);
         let data = msg.into_data();
 
-        if let Some(frame) = self.handler
+        if let Some(frame) = self
+            .handler
             .on_send_frame(Frame::message(data, opcode, true))?
         {
             if frame.payload().len() > self.settings.fragment_size {
@@ -1145,7 +1189,8 @@ where
             self.peer_addr()
         );
 
-        if let Some(frame) = self.handler
+        if let Some(frame) = self
+            .handler
             .on_send_frame(Frame::close(code, reason.borrow()))?
         {
             self.buffer_frame(frame)?;
