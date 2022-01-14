@@ -1,17 +1,22 @@
 //! Lightweight, event-driven WebSockets for Rust.
 #![allow(deprecated)]
-#![deny(missing_copy_implementations, trivial_casts, trivial_numeric_casts, unstable_features,
-        unused_import_braces)]
+#![deny(
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unstable_features,
+    unused_import_braces
+)]
 
 extern crate byteorder;
 extern crate bytes;
 extern crate httparse;
 extern crate mio;
 extern crate mio_extras;
-#[cfg(feature = "ssl")]
-extern crate openssl;
 #[cfg(feature = "nativetls")]
 extern crate native_tls;
+#[cfg(feature = "ssl")]
+extern crate openssl;
 extern crate rand;
 extern crate sha1;
 extern crate slab;
@@ -76,7 +81,7 @@ use mio::Poll;
 pub fn listen<A, F>(addr: A, factory: F) -> Result<()>
 where
     A: ToSocketAddrs + fmt::Debug,
-    F: Factory
+    F: Factory,
 {
     let ws = WebSocket::new(factory)?;
     ws.listen(addr)?;
@@ -125,7 +130,7 @@ where
 }
 
 /// WebSocket settings
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Settings {
     /// The maximum number of connections that this WebSocket will support.
     /// The default setting is low and should be increased when expecting more
