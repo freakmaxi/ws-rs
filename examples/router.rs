@@ -10,7 +10,11 @@ struct Router {
 }
 
 impl ws::Handler for Router {
-    fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
+    fn on_request(
+        &mut self,
+        req: &ws::Request,
+        origins: Option<Vec<String>>,
+    ) -> ws::Result<(ws::Response)> {
         // Clone the sender so that we can move it into the child handler
         let out = self.sender.clone();
 
@@ -46,7 +50,7 @@ impl ws::Handler for Router {
         }
 
         // Delegate to the child handler
-        self.inner.on_request(req)
+        self.inner.on_request(req, origins)
     }
 
     // Pass through any other methods that should be delegated to the child.

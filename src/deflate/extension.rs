@@ -157,8 +157,8 @@ impl<H: Handler> Handler for DeflateHandler<H> {
         Ok(req)
     }
 
-    fn on_request(&mut self, req: &Request) -> Result<Response> {
-        let mut res = self.inner.on_request(req, None)?;
+    fn on_request(&mut self, req: &Request, origins: Option<Vec<String>>) -> Result<Response> {
+        let mut res = self.inner.on_request(req, origins)?;
 
         'ext: for req_ext in req
             .extensions()?
