@@ -3,7 +3,7 @@ use std::fmt;
 
 use self::OpCode::*;
 /// Operation codes as part of rfc6455.
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum OpCode {
     /// Indicates a continuation frame of a fragmented message.
     Continue,
@@ -81,7 +81,7 @@ impl From<u8> for OpCode {
 
 use self::CloseCode::*;
 /// Status code used to indicate why an endpoint is closing the WebSocket connection.
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum CloseCode {
     /// Indicates a normal closure, meaning that the purpose for
     /// which the connection was established has been fulfilled.
