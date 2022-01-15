@@ -247,7 +247,6 @@ pub struct Settings {
     pub origins: Option<Vec<String>>,
 }
 
-impl Copy for Settings {}
 impl Clone for Settings {
     fn clone(&self) -> Self {
         let mut origins = None;
