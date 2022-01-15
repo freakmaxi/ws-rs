@@ -412,7 +412,7 @@ where
 }
 
 /// Utility for constructing a WebSocket from various settings.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Builder {
     settings: Settings,
 }

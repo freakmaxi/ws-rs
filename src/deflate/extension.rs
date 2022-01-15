@@ -1,9 +1,9 @@
 use std::mem::replace;
 
-#[cfg(feature = "nativetls")]
-use native_tls::TlsStream as SslStream;
 #[cfg(feature = "ssl")]
 use openssl::ssl::SslStream;
+#[cfg(feature = "nativetls")]
+use native_tls::TlsStream as SslStream;
 use url;
 
 use frame::Frame;
@@ -19,7 +19,7 @@ use util::{Timeout, Token};
 use super::context::{Compressor, Decompressor};
 
 /// Deflate Extension Handler Settings
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct DeflateSettings {
     /// The max size of the sliding window. If the other endpoint selects a smaller size, that size
     /// will be used instead. This must be an integer between 9 and 15 inclusive.
@@ -59,7 +59,7 @@ impl Default for DeflateSettings {
 
 /// Utility for applying the permessage-deflate extension to a handler with particular deflate
 /// settings.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct DeflateBuilder {
     settings: DeflateSettings,
 }
@@ -160,8 +160,7 @@ impl<H: Handler> Handler for DeflateHandler<H> {
     fn on_request(&mut self, req: &Request) -> Result<Response> {
         let mut res = self.inner.on_request(req)?;
 
-        'ext: for req_ext in req
-            .extensions()?
+        'ext: for req_ext in req.extensions()?
             .iter()
             .filter(|&&ext| ext.contains("permessage-deflate"))
         {
@@ -283,8 +282,7 @@ impl<H: Handler> Handler for DeflateHandler<H> {
     }
 
     fn on_response(&mut self, res: &Response) -> Result<()> {
-        if let Some(res_ext) = res
-            .extensions()?
+        if let Some(res_ext) = res.extensions()?
             .iter()
             .find(|&&ext| ext.contains("permessage-deflate"))
         {
@@ -451,8 +449,7 @@ impl<H: Handler> Handler for DeflateHandler<H> {
 
                             // it's safe to unwrap because of the above check for empty
                             let opcode = self.fragments.first().unwrap().opcode();
-                            let size = self
-                                .fragments
+                            let size = self.fragments
                                 .iter()
                                 .fold(0, |len, frame| len + frame.payload().len());
                             let mut compressed = Vec::with_capacity(size);
