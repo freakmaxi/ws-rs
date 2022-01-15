@@ -252,7 +252,7 @@ impl Clone for Settings {
         let mut origins = None;
         if self.origins.is_some() {
             let mut origin_vec = Vec::<String>::new();
-            for origin in self.origins.unwrap() {
+            for origin in self.origins.as_ref().unwrap() {
                 origin_vec.push(origin.clone());
             }
             origins = Some(origin_vec);
