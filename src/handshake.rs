@@ -333,7 +333,8 @@ impl Request {
             Ok(Some(Request {
                 path: req.path.unwrap().into(),
                 method: req.method.unwrap().into(),
-                headers: req.headers
+                headers: req
+                    .headers
                     .iter()
                     .map(|h| (h.name.into(), h.value.into()))
                     .collect(),
@@ -362,7 +363,8 @@ impl Request {
                         "No host passed for WebSocket connection.",
                     ))?,
                     url.port_or_known_default().unwrap_or(80)
-                ).into(),
+                )
+                .into(),
             ),
             ("Sec-WebSocket-Version".into(), "13".into()),
             ("Sec-WebSocket-Key".into(), generate_key().into()),
@@ -370,7 +372,9 @@ impl Request {
         ];
 
         if url.password().is_some() || url.username() != "" {
-            let basic = encode_base64(format!("{}:{}", url.username(), url.password().unwrap_or("")).as_bytes());
+            let basic = encode_base64(
+                format!("{}:{}", url.username(), url.password().unwrap_or("")).as_bytes(),
+            );
             headers.push(("Authorization".into(), format!("Basic {}", basic).into()))
         }
 
@@ -596,7 +600,8 @@ impl Response {
             Ok(Some(Response {
                 status: res.code.unwrap(),
                 reason: res.reason.unwrap().into(),
-                headers: res.headers
+                headers: res
+                    .headers
                     .iter()
                     .map(|h| (h.name.into(), h.value.into()))
                     .collect(),
@@ -610,16 +615,48 @@ impl Response {
     /// Construct a new WebSocket handshake HTTP response from a request.
     /// This will create a response that ignores protocols and extensions. Edit this response to
     /// accept a protocol and extensions as necessary.
-    pub fn from_request(req: &Request) -> Result<Response> {
-        let res = Response {
-            status: 101,
-            reason: "Switching Protocols".into(),
-            headers: vec![
-                ("Connection".into(), "Upgrade".into()),
-                ("Sec-WebSocket-Accept".into(), req.hashed_key()?.into()),
-                ("Upgrade".into(), "websocket".into()),
-            ],
-            body: Vec::new(),
+    pub fn from_request(req: &Request, origins: Option<Vec<String>>) -> Result<Response> {
+        let res = match origins {
+            Some(origins_vec) => match req.origin() {
+                Ok(o) if o.is_some() => {
+                    let origin = o.unwrap();
+                    let index = origins_vec.iter().position(|i| origin.eq(i.as_str()));
+                    match index {
+                        Some(_) => Response {
+                            status: 101,
+                            reason: "Switching Protocols".into(),
+                            headers: vec![
+                                ("Connection".into(), "Upgrade".into()),
+                                ("Sec-WebSocket-Accept".into(), req.hashed_key()?.into()),
+                                ("Upgrade".into(), "websocket".into()),
+                            ],
+                            body: Vec::new(),
+                        },
+                        None => Response {
+                            status: 403,
+                            reason: "Forbidden".into(),
+                            headers: vec![("Connection".into(), "Close".into())],
+                            body: Vec::new(),
+                        },
+                    }
+                }
+                _ => Response {
+                    status: 403,
+                    reason: "Forbidden".into(),
+                    headers: vec![("Connection".into(), "Close".into())],
+                    body: Vec::new(),
+                },
+            },
+            None => Response {
+                status: 101,
+                reason: "Switching Protocols".into(),
+                headers: vec![
+                    ("Connection".into(), "Upgrade".into()),
+                    ("Sec-WebSocket-Accept".into(), req.hashed_key()?.into()),
+                    ("Upgrade".into(), "websocket".into()),
+                ],
+                body: Vec::new(),
+            },
         };
 
         debug!("Built response from request:\n{}", res);
@@ -678,7 +715,8 @@ mod test {
              Upgrade: websocket\r\n\
              Sec-WebSocket-Version: 13\r\n\
              Sec-WebSocket-Key: q16eN37NCfVwUChPvBdk4g==\r\n\r\n"
-        ).unwrap();
+        )
+        .unwrap();
 
         let req = Request::parse(&buf).unwrap().unwrap();
         let res = Response::from_request(&req).unwrap();
@@ -702,10 +740,11 @@ mod test {
              X-Forwarded-For: 192.168.1.1, 192.168.1.2, 192.168.1.3\r\n\
              Sec-WebSocket-Version: 13\r\n\
              Sec-WebSocket-Key: q16eN37NCfVwUChPvBdk4g==\r\n\r\n"
-        ).unwrap();
+        )
+        .unwrap();
 
         let req = Request::parse(&buf).unwrap().unwrap();
-        let res = Response::from_request(&req).unwrap();
+        let res = Response::from_request(&req, None).unwrap();
         let shake = Handshake {
             request: req,
             response: res,
@@ -725,10 +764,11 @@ mod test {
             Upgrade: websocket\r\n\
             Forwarded: by=192.168.1.1; for=192.0.2.43, for=\"[2001:db8:cafe::17]\", for=unknown\r\n\
             Sec-WebSocket-Version: 13\r\n\
-            Sec-WebSocket-Key: q16eN37NCfVwUChPvBdk4g==\r\n\r\n")
-            .unwrap();
+            Sec-WebSocket-Key: q16eN37NCfVwUChPvBdk4g==\r\n\r\n"
+        )
+        .unwrap();
         let req = Request::parse(&buf).unwrap().unwrap();
-        let res = Response::from_request(&req).unwrap();
+        let res = Response::from_request(&req, None).unwrap();
         let shake = Handshake {
             request: req,
             response: res,

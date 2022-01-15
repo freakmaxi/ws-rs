@@ -58,7 +58,6 @@ use std::fmt;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use mio::Poll;
-use url::quirks::origin;
 
 /// A utility function for setting up a WebSocket server.
 ///
@@ -131,7 +130,7 @@ where
 }
 
 /// WebSocket settings
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct Settings {
     /// The maximum number of connections that this WebSocket will support.
     /// The default setting is low and should be increased when expecting more
@@ -252,7 +251,7 @@ impl Clone for Settings {
         let mut origins = None;
         if self.origins.is_some() {
             let mut origin_vec = Vec::<String>::new();
-            for origin in self.origins.unwrap() {
+            for origin in self.origins.as_ref().unwrap() {
                 origin_vec.push(origin.clone());
             }
             origins = Some(origin_vec);
@@ -411,7 +410,7 @@ where
 }
 
 /// Utility for constructing a WebSocket from various settings.
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone)]
 pub struct Builder {
     settings: Settings,
 }
@@ -431,7 +430,7 @@ impl Builder {
     {
         Ok(WebSocket {
             poll: Poll::new()?,
-            handler: io::Handler::new(factory, self.settings),
+            handler: io::Handler::new(factory, self.settings.clone()),
         })
     }
 

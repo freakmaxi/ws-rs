@@ -94,9 +94,9 @@ pub trait Handler {
     /// Ok(res)
     /// ```
     #[inline]
-    fn on_request(&mut self, req: &Request) -> Result<Response> {
+    fn on_request(&mut self, req: &Request, origins: Option<Vec<String>>) -> Result<Response> {
         debug!("Handler received request:\n{}", req);
-        Response::from_request(req)
+        Response::from_request(req, origins)
     }
 
     /// A method for handling the low-level workings of the response portion of the WebSocket
@@ -397,13 +397,14 @@ mod test {
         let mut h = H;
         let url = url::Url::parse("wss://127.0.0.1:3012").unwrap();
         let req = Request::from_url(&url).unwrap();
-        let res = Response::from_request(&req).unwrap();
+        let res = Response::from_request(&req, None).unwrap();
         h.on_open(Handshake {
             request: req,
             response: res,
             peer_addr: None,
             local_addr: None,
-        }).unwrap();
+        })
+        .unwrap();
         h.on_message(message::Message::Text("testme".to_owned()))
             .unwrap();
         h.on_close(CloseCode::Normal, "");

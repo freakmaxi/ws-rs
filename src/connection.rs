@@ -3,7 +3,6 @@ use std::collections::VecDeque;
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use std::mem::replace;
 use std::net::SocketAddr;
-use std::ops::Index;
 use std::str::from_utf8;
 
 use mio::tcp::TcpStream;
@@ -382,23 +381,6 @@ where
                         self.events = Ready::empty();
                     }
                 }
-                Kind::Forbidden => {
-                    let msg = err.to_string();
-                    if let Server = self.endpoint {
-                        res.get_mut().clear();
-                        if let Err(err) =
-                            write!(res.get_mut(), "HTTP/1.1 403 Forbidden\r\n\r\n{}", msg)
-                        {
-                            self.handler.on_error(Error::from(err));
-                            self.events = Ready::empty();
-                        } else {
-                            self.events.remove(Ready::readable());
-                            self.events.insert(Ready::writable());
-                        }
-                    } else {
-                        self.events = Ready::empty();
-                    }
-                }
                 _ => {
                     let msg = err.to_string();
                     self.handler.on_error(err);
@@ -561,29 +543,6 @@ where
                 }
             };
 
-            if self.settings.origins.is_some() {
-                match request.origin() {
-                    Ok(o) if o.is_some() => {
-                        let origin = o.unwrap();
-                        let index = self
-                            .settings
-                            .origins
-                            .unwrap()
-                            .iter()
-                            .position(|i| origin.eq(i.as_str()));
-                        if index.is_none() {
-                            return Err(Error::new(Kind::Forbidden, "origin is not allowed"));
-                        }
-                    }
-                    _ => {
-                        return Err(Error::new(
-                            Kind::Forbidden,
-                            "origin is required but missing",
-                        ))
-                    }
-                }
-            }
-
             let response = Response::parse(res.get_ref())?.ok_or_else(|| {
                 Error::new(
                     Kind::Internal,
@@ -625,7 +584,9 @@ where
                         }
                         if let Some(ref request) = Request::parse(req.get_ref())? {
                             trace!("Handshake request received: \n{}", request);
-                            let response = self.handler.on_request(request)?;
+                            let response = self
+                                .handler
+                                .on_request(request, self.settings.origins.clone())?;
                             response.format(res.get_mut())?;
                             self.events.remove(Ready::readable());
                             self.events.insert(Ready::writable());
