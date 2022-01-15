@@ -58,6 +58,7 @@ use std::fmt;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use mio::Poll;
+use url::quirks::origin;
 
 /// A utility function for setting up a WebSocket server.
 ///
@@ -243,7 +244,49 @@ pub struct Settings {
     /// restrict accesses only with the origin header entry
     ///
     /// Default: None
-    pub origins: Option<[String]>,
+    pub origins: Option<Vec<String>>,
+}
+
+impl Clone for Settings {
+    fn clone(&self) -> Self {
+        let mut origins = None;
+        if self.origins.is_some() {
+            let mut origin_vec = Vec::<String>::new();
+            for origin in self.origins.unwrap() {
+                origin_vec.push(origin.clone());
+            }
+            origins = Some(origin_vec);
+        }
+
+        Settings {
+            max_connections: self.max_connections,
+            queue_size: self.queue_size,
+            panic_on_new_connection: self.panic_on_new_connection,
+            panic_on_shutdown: self.panic_on_shutdown,
+            fragments_capacity: self.fragments_capacity,
+            fragments_grow: self.fragments_grow,
+            fragment_size: self.fragment_size,
+            max_fragment_size: self.max_fragment_size,
+            in_buffer_capacity: self.in_buffer_capacity,
+            in_buffer_grow: self.in_buffer_grow,
+            out_buffer_capacity: self.out_buffer_capacity,
+            out_buffer_grow: self.out_buffer_grow,
+            panic_on_internal: self.panic_on_internal,
+            panic_on_capacity: self.panic_on_capacity,
+            panic_on_protocol: self.panic_on_protocol,
+            panic_on_encoding: self.panic_on_encoding,
+            panic_on_queue: self.panic_on_queue,
+            panic_on_io: self.panic_on_io,
+            panic_on_timeout: self.panic_on_timeout,
+            shutdown_on_interrupt: self.shutdown_on_interrupt,
+            masking_strict: self.masking_strict,
+            key_strict: self.key_strict,
+            method_strict: self.method_strict,
+            encrypt_server: self.encrypt_server,
+            tcp_nodelay: self.tcp_nodelay,
+            origins,
+        }
+    }
 }
 
 impl Default for Settings {
