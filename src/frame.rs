@@ -85,7 +85,7 @@ impl Frame {
     /// Get the OpCode of the frame.
     #[inline]
     pub fn opcode(&self) -> OpCode {
-        self.opcode
+        self.opcode.clone()
     }
 
     /// Test whether this is a control frame.

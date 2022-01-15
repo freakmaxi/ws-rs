@@ -431,7 +431,7 @@ impl Builder {
     {
         Ok(WebSocket {
             poll: Poll::new()?,
-            handler: io::Handler::new(factory, self.settings),
+            handler: io::Handler::new(factory, self.settings.clone()),
         })
     }
 
