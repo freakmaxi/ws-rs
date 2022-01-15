@@ -131,7 +131,7 @@ where
 }
 
 /// WebSocket settings
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct Settings {
     /// The maximum number of connections that this WebSocket will support.
     /// The default setting is low and should be increased when expecting more
@@ -247,6 +247,7 @@ pub struct Settings {
     pub origins: Option<Vec<String>>,
 }
 
+impl Copy for Settings {}
 impl Clone for Settings {
     fn clone(&self) -> Self {
         let mut origins = None;
