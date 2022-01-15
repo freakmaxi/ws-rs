@@ -861,7 +861,8 @@ where
                                 } else {
                                     if !self.state.is_closing() {
                                         if has_reason {
-                                            self.send_close(named, "")?; // note this drops any extra close data
+                                            self.send_close(named.clone(), "")?;
+                                        // note this drops any extra close data
                                         } else {
                                             self.send_close(CloseCode::Invalid, "")?;
                                         }
@@ -1044,7 +1045,7 @@ where
                     .peekable();
                 let chunk = chunks.next().expect("Unable to get initial chunk!");
 
-                let mut first = Frame::message(Vec::from(chunk), opcode, false);
+                let mut first = Frame::message(Vec::from(chunk), opcode.clone(), false);
 
                 // Match reserved bits from original to keep extension status intact
                 first.set_rsv1(frame.has_rsv1());

@@ -143,6 +143,11 @@ where
 
     #[cfg(any(feature = "ssl", feature = "nativetls"))]
     pub fn connect(&mut self, poll: &mut Poll, url: Url) -> Result<()> {
+<<<<<<< HEAD
+=======
+        let settings = self.settings.clone();
+
+>>>>>>> 55403a0aeade0ae32e6a5d4ca53bfa65714875e3
         let (tok, addresses) = {
             let (tok, entry, connection_id, handler) =
                 if self.connections.len() < self.settings.max_connections {
@@ -366,6 +371,10 @@ where
     #[cfg(any(feature = "ssl", feature = "nativetls"))]
     pub fn accept(&mut self, poll: &mut Poll, sock: TcpStream) -> Result<()> {
         let factory = &mut self.factory;
+<<<<<<< HEAD
+=======
+        let settings = self.settings.clone();
+>>>>>>> 55403a0aeade0ae32e6a5d4ca53bfa65714875e3
 
         if self.settings.tcp_nodelay {
             sock.set_nodelay(true)?
@@ -783,7 +792,7 @@ where
                     Signal::Close(code, reason) => {
                         trace!("Broadcasting close: {:?} - {}", code, reason);
                         for (_, conn) in self.connections.iter_mut() {
-                            if let Err(err) = conn.send_close(code, reason.borrow()) {
+                            if let Err(err) = conn.send_close(code.clone(), reason.borrow()) {
                                 dead.push((conn.token(), err))
                             }
                         }
