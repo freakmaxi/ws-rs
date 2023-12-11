@@ -55,6 +55,11 @@ pub trait Handler {
         // Ignore connection reset errors by default, but allow library clients to see them by
         // overriding this method if they want
         if let Kind::Io(ref err) = err.kind {
+            // broken pipe errors
+            if let Some(32) = err.raw_os_error() {
+                return;
+            }
+            // connection reset errors
             if let Some(104) = err.raw_os_error() {
                 return;
             }
