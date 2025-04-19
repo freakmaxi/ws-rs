@@ -11,7 +11,7 @@ use mio_extras;
 
 use url::Url;
 
-#[cfg(feature = "native_tls")]
+#[cfg(feature = "nativetls")]
 use native_tls::Error as SslError;
 
 use super::Settings;

@@ -719,7 +719,7 @@ mod test {
         .unwrap();
 
         let req = Request::parse(&buf).unwrap().unwrap();
-        let res = Response::from_request(&req).unwrap();
+        let res = Response::from_request(&req, None).unwrap();
         let shake = Handshake {
             request: req,
             response: res,

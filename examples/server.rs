@@ -3,14 +3,14 @@ extern crate env_logger;
 /// so will allow you to see more details about the connection by using the RUST_LOG env variable.
 extern crate ws;
 
-use ws::listen;
+use ws::{listen, Sender};
 
 fn main() {
     // Setup logging
     env_logger::init();
 
     // Listen on an address and call the closure for each connection
-    if let Err(error) = listen("127.0.0.1:3012", |out| {
+    if let Err(error) = listen("127.0.0.1:3012", |out: Sender| {
         // The handler needs to take ownership of out, so we use move
         move |msg| {
             // Handle messages received on this connection

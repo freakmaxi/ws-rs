@@ -40,11 +40,11 @@ struct Server {
 
 impl Handler for Server {
     //
-    fn on_request(&mut self, req: &Request) -> Result<(Response)> {
+    fn on_request(&mut self, req: &Request, origins: Option<Vec<String>>) -> Result<(Response)> {
         // Using multiple handlers is better (see router example)
         match req.resource() {
             // The default trait implementation
-            "/ws" => Response::from_request(req),
+            "/ws" => Response::from_request(req, origins),
 
             // Create a custom response
             "/" => Ok(Response::new(200, "OK", INDEX_HTML.to_vec())),

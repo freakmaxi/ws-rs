@@ -5,12 +5,13 @@ extern crate ws;
 
 #[cfg(feature = "permessage-deflate")]
 use ws::deflate::DeflateHandler;
+use ws::Sender;
 
 #[cfg(not(feature = "permessage-deflate"))]
 fn main() {
     env_logger::init();
 
-    ws::listen("127.0.0.1:3012", |out| {
+    ws::listen("127.0.0.1:3012", |out: Sender| {
         move |msg| out.send(msg)
     }).unwrap()
 }
