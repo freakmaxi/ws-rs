@@ -116,6 +116,14 @@ where
         }
     }
 
+    fn purge_connections(&mut self) {
+        let connections_count = self.connections.len();
+        
+        self.connections.retain(|_, c| c.is_alive());
+        
+        debug!("Purged total {} connection(s)", self.connections.len() - connections_count);
+    }
+    
     pub fn sender(&self) -> Sender {
         Sender::new(ALL, self.queue_tx.clone(), 0)
     }
@@ -427,6 +435,8 @@ where
 
     #[cfg(not(any(feature = "ssl", feature = "nativetls")))]
     pub fn accept(&mut self, poll: &mut Poll, sock: TcpStream) -> Result<()> {
+        self.purge_connections();
+        
         let factory = &mut self.factory;
 
         if self.settings.tcp_nodelay {

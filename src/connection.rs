@@ -95,6 +95,8 @@ where
 
     settings: Settings,
     connection_id: u32,
+
+    alive: bool
 }
 
 impl<H> Connection<H>
@@ -124,6 +126,7 @@ where
             addresses: Vec::new(),
             settings,
             connection_id,
+            alive: true,
         }
     }
 
@@ -479,6 +482,10 @@ where
         }
     }
 
+    pub fn is_alive(&self) -> bool {
+        self.alive
+    }
+
     pub fn disconnect(&mut self) {
         match self.state {
             RespondingClose | FinishedClose | Connecting(_, _) => (),
@@ -486,7 +493,8 @@ where
                 self.handler.on_close(CloseCode::Abnormal, "");
             }
         }
-        self.events = Ready::empty()
+        self.events = Ready::empty();
+        self.alive = false;
     }
 
     pub fn consume(self) -> H {
